@@ -16,23 +16,17 @@
 #define PIN_SERVO 12
 #define MIN_MICROS 500
 #define MAX_MICROS 2500
-#define SERVO_WAIT_POSITION 0
-#define SERVO_FEED_POSITION 180
+#define SERVO_RESTING_POSITION 90
+#define SERVO_FEEDING_POSITION 120 // 0=max anticlockwise, 0=stopped, 180=max clockwise
 int servoIndex = -1;
 
 //------------FEEDING SETTINGS----------------
-#define FEEDING_INTERVAL_IN_HOURS 12                              // Change this to the interval you want to feed your fish
-unsigned long previousMillis = 0;                                 // will store last time code was executed
-const long interval = FEEDING_INTERVAL_IN_HOURS * 60 * 60 * 1000; // interval in milliseconds
-// const long interval = 20 * 1000; // interval in milliseconds
+#define FEEDING_INTERVAL_IN_HOURS 12 // Change this to the interval you want to feed your fish
+#define FEEDING_DURATION_IN_MS 500   // For how long the servo will be active
 
-void configureSerial()
-{
-  Serial.begin(115200);
-  while (!Serial)
-    ;
-  delay(200);
-}
+unsigned long previousMillis = 0; // will store last time code was executed
+// const long interval = FEEDING_INTERVAL_IN_HOURS * 60 * 60 * 1000; // interval in milliseconds
+const long interval = 10 * 1000; // interval in milliseconds
 
 void configureServo()
 {
@@ -45,36 +39,6 @@ void configureServo()
     Serial.println(F("Setup Servo OK"));
   else
     Serial.println(F("Setup Servo failed"));
-}
-
-void transitionToPosition(int targetPosition)
-{
-  int delayBetweenSteps = 10;
-
-  int position = ESP32_ISR_Servos.getPosition(servoIndex);
-  Serial.print(F("Transitioning from "));
-  Serial.print(position);
-  Serial.print(F(" to "));
-  Serial.println(targetPosition);
-
-  if (position < targetPosition)
-  {
-    for (; position <= targetPosition; position++)
-    {
-      ESP32_ISR_Servos.setPosition(servoIndex, position);
-      // waits delayBetweenSteps ms for the servo to reach the position
-      delay(delayBetweenSteps);
-    }
-  }
-  else
-  {
-    for (; position > targetPosition; position--)
-    {
-      ESP32_ISR_Servos.setPosition(servoIndex, position);
-      // waits delayBetweenSteps ms for the servo to reach the position
-      delay(delayBetweenSteps);
-    }
-  }
 }
 
 bool isItTimeToFeed()
@@ -96,24 +60,29 @@ bool isItTimeToFeed()
 
 void feedFish()
 {
-  Serial.println(F("Feeding fish..."));
-
-  int position;
+  Serial.print(millis());
+  Serial.println(F(" Start feeding fish..."));
 
   ESP32_ISR_Servos.enable(servoIndex);
 
-  transitionToPosition(SERVO_WAIT_POSITION);
+  ESP32_ISR_Servos.setPosition(servoIndex, SERVO_FEEDING_POSITION);
 
-  transitionToPosition(SERVO_FEED_POSITION);
+  delay(FEEDING_DURATION_IN_MS);
+
+  ESP32_ISR_Servos.setPosition(servoIndex, SERVO_RESTING_POSITION);
 
   ESP32_ISR_Servos.disable(servoIndex);
 
-  Serial.println(F("Done feeding fish."));
+  Serial.print(millis());
+  Serial.println(F(" Done feeding fish."));
 }
 
 void setup()
 {
-  configureSerial();
+  Serial.begin(115200);
+  while (!Serial)
+    ;
+  delay(200);
 
   Serial.print(F("\nStarting Fish feeder"));
 
