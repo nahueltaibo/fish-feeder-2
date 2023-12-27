@@ -22,7 +22,7 @@ int servoIndex = -1;
 #define FEEDING_DURATION_IN_MS 200   // For how long the servo will be active
 
 unsigned long previousMillis = 0;                                 // will store last time code was executed
-const long interval = FEEDING_INTERVAL_IN_HOURS * 60 * 60 * 1000; // interval in milliseconds
+const unsigned long interval = FEEDING_INTERVAL_IN_HOURS * 60 * 60 * 1000L; // interval in milliseconds
 // const long interval = 10 * 1000; // interval in milliseconds
 
 void configureServo()
